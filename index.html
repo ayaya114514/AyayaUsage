@@ -74,9 +74,6 @@
   h2 span { color: var(--muted); font-weight: 400; font-size: 13px; margin-left: 8px; }
   .aside { color: var(--text-2); font-size: 13px; }
   .aside b { color: var(--text); font-weight: 600; margin-left: 4px; }
-  .legend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--text-2); font-size: 13px; }
-  .legend span { display: inline-flex; align-items: center; gap: 6px; }
-  .legend i { width: 8px; height: 8px; border-radius: 2px; flex: none; }
 
   .share-row { display: grid; grid-template-columns: 52px 1fr; align-items: center; gap: 10px; margin-bottom: 8px; color: var(--muted); font-size: 12px; }
   .share { display: flex; gap: 2px; height: 8px; }
@@ -160,7 +157,7 @@
     <div class="chart" id="c-cost"></div>
   </section>
 
-  <section class="block">
+  <section class="block last">
     <div class="block-head">
       <h2>每日 token</h2>
       <div class="tools">
@@ -173,14 +170,6 @@
     <div class="share-legend" id="share-legend"></div>
     <div class="chart" id="c-tok"></div>
   </section>
-
-  <section class="block last">
-    <div class="block-head">
-      <h2>5 小时窗口峰值<span>账号级，含其他客户端</span></h2>
-      <div class="legend"><span><i style="background:var(--s1)"></i>峰值</span><span><i style="background:var(--critical)"></i>≥ 90%</span></div>
-    </div>
-    <div class="chart" id="c-quota"></div>
-  </section>
 </main>
 <div class="tip" id="tip" hidden></div>
 
@@ -192,7 +181,6 @@ const TOKENS = [
   { key: 'input', usd: 'usd_input', label: '输入', color: 'var(--s3)' },
   { key: 'output', usd: 'usd_output', label: '输出', color: 'var(--s4)' },
 ];
-const FIVE_H = 5 * 3600;
 
 let DATA = null;
 let range = '7';
@@ -373,60 +361,6 @@ function drawDaily(box, mode, days, value, color, fmtAxis, fmtVal, tipRows) {
   }, () => { wash.setAttribute('opacity', 0); if (hoverDot) hoverDot.setAttribute('opacity', 0); });
 }
 
-// ---------------------------------------------------------------- 5h windows
-
-// One entry per 5-hour window: its peak used_percentage. Readings whose
-// resets_at differ by <= 60s belong to the same window.
-function fiveHourWindows() {
-  const wins = [];
-  for (const [t, pct, end] of DATA.quota.five_hour || []) {
-    const w = wins[wins.length - 1];
-    if (w && Math.abs(end - w.end) <= 60) w.peak = Math.max(w.peak, pct);
-    else wins.push({ start: end - FIVE_H, end, peak: pct });
-  }
-  return wins;
-}
-
-function drawWindows(box, t0, t1) {
-  const now = Date.now() / 1000;
-  const wins = fiveHourWindows().filter((w) => w.end > t0 && w.start < t1);
-  if (!wins.length) { box.innerHTML = '<div class="empty">这段时间还没有额度记录</div>'; return; }
-  const f = frame(box, 100, [0, 25, 50, 75, 100], (v) => v + '%');
-  const x = (t) => f.m.l + ((t - t0) / (t1 - t0)) * f.pw;
-  const nDays = Math.round((t1 - t0) / 86400);
-  const dayW = f.pw / nDays;
-  dayLabels(f, nDays, dayW, Array.from({ length: nDays }, (_, i) => new Date((t0 + i * 86400) * 1000)));
-  const bw = Math.max(1.5, Math.min(18, (FIVE_H / (t1 - t0)) * f.pw * 0.7));
-
-  let lastLabel = -Infinity;
-  const cx = wins.map((w) => x(Math.max(t0, Math.min(t1, (w.start + w.end) / 2))));
-  wins.forEach((w, i) => {
-    const h = Math.max(1, f.y(0) - f.y(w.peak));
-    const p = el('path', { d: colPath(cx[i] - bw / 2, f.y(0) - h, bw, h, 3) }, f.svg);
-    p.style.fill = w.peak >= 90 ? 'var(--critical)' : 'var(--s1)';
-    if (w.end > now) p.setAttribute('opacity', 0.6);
-    if ((w.peak >= 90 || w.end > now) && cx[i] - lastLabel > 34) {
-      el('text', { class: 'val', x: cx[i], y: f.y(w.peak) - 6, 'text-anchor': 'middle' }, f.svg, w.peak + '%');
-      lastLabel = cx[i];
-    }
-  });
-
-  const ring = el('rect', { y: f.m.t - 8, height: f.ph + 8, rx: 4, fill: 'var(--hover)', opacity: 0 }, f.svg);
-  f.svg.insertBefore(ring, f.svg.querySelector('line'));
-  hoverLayer(f, (ev, px) => {
-    let best = -1, dist = Infinity;
-    cx.forEach((c, i) => { const d = Math.abs(c - px); if (d < dist) { dist = d; best = i; } });
-    if (dist > Math.max(24, bw)) { ring.setAttribute('opacity', 0); hideTip(); return; }
-    const w = wins[best];
-    ring.setAttribute('x', cx[best] - bw / 2 - 6); ring.setAttribute('width', bw + 12); ring.setAttribute('opacity', 1);
-    const s = new Date(w.start * 1000), e = new Date(w.end * 1000);
-    showTip(ev, `${mmdd(s)} ${hhmm(s)} – ${hhmm(e)}`, [
-      { label: '峰值', value: w.peak + '%', color: w.peak >= 90 ? 'var(--critical)' : 'var(--s1)' },
-      { label: '状态', value: w.end > now ? '进行中' : '已结束' },
-    ]);
-  }, () => ring.setAttribute('opacity', 0));
-}
-
 // ---------------------------------------------------------------- stats, share, table
 
 function stat(k, v, d, meter) {
@@ -554,8 +488,6 @@ function render() {
   drawDaily(document.getElementById('c-tok'), modes.tok, days, tokTotal, 'var(--s1)', fmtTok, fmtTok, (d) =>
     [{ label: '合计', value: fmtTok(tokTotal(d)) }, { label: '命中率', value: fmtHit(hitRate(d)) }]
       .concat(TOKENS.map((t) => ({ label: t.label, value: fmtTok(d[t.key]), color: t.color }))));
-  const t0 = parseDay(days[0].date).getTime() / 1000;
-  drawWindows(document.getElementById('c-quota'), t0, t0 + days.length * 86400);
   renderTable(days);
 }
 
