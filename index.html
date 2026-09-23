@@ -51,6 +51,9 @@
   .seg button:hover { color: var(--text); }
   .seg button[aria-pressed="true"] { background: #262626; color: var(--text); }
   .seg button:focus-visible { outline: 2px solid var(--s1); outline-offset: 1px; }
+  .seg.sm { padding: 2px; }
+  .seg.sm button { font-size: 13px; padding: 2px 10px; }
+  .tools { display: flex; align-items: center; gap: 14px; }
   .updated { color: var(--muted); font-size: 13px; }
 
   .stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-bottom: 1px solid var(--line); }
@@ -142,29 +145,41 @@
   <section class="stats" id="stats"></section>
 
   <section class="block">
-    <div class="block-head"><h2>每日花费<span>API 等价 · USD</span></h2><div class="aside" id="a-cost"></div></div>
+    <div class="block-head"><h2>明细</h2></div>
+    <div class="table-wrap"><table id="tbl"></table></div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>每日花费<span>API 等价 · USD</span></h2>
+      <div class="tools">
+        <div class="seg sm" data-chart="cost"><button type="button" data-mode="bar">柱状</button><button type="button" data-mode="line">折线</button></div>
+        <div class="aside" id="a-cost"></div>
+      </div>
+    </div>
     <div class="chart" id="c-cost"></div>
   </section>
 
   <section class="block">
-    <div class="block-head"><h2>每日 token</h2><div class="aside" id="a-tok"></div></div>
+    <div class="block-head">
+      <h2>每日 token</h2>
+      <div class="tools">
+        <div class="seg sm" data-chart="tok"><button type="button" data-mode="bar">柱状</button><button type="button" data-mode="line">折线</button></div>
+        <div class="aside" id="a-tok"></div>
+      </div>
+    </div>
     <div class="share-row"><span>按 token</span><div class="share" id="share-tok"></div></div>
     <div class="share-row"><span>按花费</span><div class="share" id="share-usd"></div></div>
     <div class="share-legend" id="share-legend"></div>
     <div class="chart" id="c-tok"></div>
   </section>
 
-  <section class="block">
+  <section class="block last">
     <div class="block-head">
       <h2>5 小时窗口峰值<span>账号级，含其他客户端</span></h2>
       <div class="legend"><span><i style="background:var(--s1)"></i>峰值</span><span><i style="background:var(--critical)"></i>≥ 90%</span></div>
     </div>
     <div class="chart" id="c-quota"></div>
-  </section>
-
-  <section class="block last">
-    <div class="block-head"><h2>明细</h2></div>
-    <div class="table-wrap"><table id="tbl"></table></div>
   </section>
 </main>
 <div class="tip" id="tip" hidden></div>
@@ -182,6 +197,11 @@ const FIVE_H = 5 * 3600;
 let DATA = null;
 let range = '7';
 try { range = localStorage.getItem('ayaya-usage-range') || range; } catch (e) {}
+const modes = { cost: 'bar', tok: 'bar' };
+try {
+  const saved = JSON.parse(localStorage.getItem('ayaya-usage-modes') || '{}');
+  for (const k in modes) if (saved[k] === 'bar' || saved[k] === 'line') modes[k] = saved[k];
+} catch (e) {}
 
 // ---------------------------------------------------------------- format
 
@@ -302,7 +322,7 @@ function dayLabels(f, n, band, dates) {
   });
 }
 
-function drawColumns(box, days, value, color, fmtAxis, fmtVal, tipRows) {
+function drawDaily(box, mode, days, value, color, fmtAxis, fmtVal, tipRows) {
   const vals = days.map(value);
   const max = Math.max(...vals);
   if (!(max > 0)) { box.innerHTML = '<div class="empty">这段时间没有使用记录</div>'; return; }
@@ -311,27 +331,46 @@ function drawColumns(box, days, value, color, fmtAxis, fmtVal, tipRows) {
   const n = days.length, band = f.pw / n;
   const bw = Math.max(1.5, Math.min(24, band * 0.62));
   const ww = Math.min(band, bw + 16);
+  const cx = (i) => f.m.l + band * (i + 0.5);
   const wash = el('rect', { y: f.m.t - 8, height: f.ph + 8, width: ww, rx: 4, fill: 'var(--hover)', opacity: 0 }, f.svg);
   f.svg.insertBefore(wash, f.svg.querySelector('line'));
-
   const peak = vals.indexOf(max);
-  vals.forEach((v, i) => {
-    if (!(v > 0)) return;
-    const x = f.m.l + band * i + (band - bw) / 2;
-    const h = Math.max(1, f.y(0) - f.y(v));
-    const p = el('path', { d: colPath(x, f.y(0) - h, bw, h, 4) }, f.svg);
-    p.style.fill = color;
-  });
+  let hoverDot = null;
+
+  if (mode === 'line') {
+    const pts = vals.map((v, i) => [cx(i).toFixed(1), f.y(v).toFixed(1)]);
+    const d = pts.map((q, i) => (i ? 'L' : 'M') + q[0] + ',' + q[1]).join('');
+    const area = el('path', { d: `${d}L${pts[n - 1][0]},${f.y(0)}L${pts[0][0]},${f.y(0)}Z`, opacity: 0.1 }, f.svg);
+    area.style.fill = color;
+    const line = el('path', { d, fill: 'none', 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, f.svg);
+    line.style.stroke = color;
+    // Markers only while there is room for them; the peak always gets one.
+    pts.forEach((q, i) => {
+      if (band < 14 && i !== peak) return;
+      const c = el('circle', { cx: q[0], cy: q[1], r: 4, 'stroke-width': 2, stroke: 'var(--bg)' }, f.svg);
+      c.style.fill = color;
+    });
+    hoverDot = el('circle', { r: 5, 'stroke-width': 2, stroke: 'var(--bg)', opacity: 0 }, f.svg);
+    hoverDot.style.fill = color;
+  } else {
+    vals.forEach((v, i) => {
+      if (!(v > 0)) return;
+      const h = Math.max(1, f.y(0) - f.y(v));
+      const p = el('path', { d: colPath(cx(i) - bw / 2, f.y(0) - h, bw, h, 4) }, f.svg);
+      p.style.fill = color;
+    });
+  }
   // Label only the peak day; the tooltip and the table carry the rest.
-  el('text', { class: 'val', x: f.m.l + band * (peak + 0.5), y: f.y(max) - 6, 'text-anchor': 'middle' }, f.svg, fmtVal(max));
+  el('text', { class: 'val', x: cx(peak), y: f.y(max) - (mode === 'line' ? 10 : 6), 'text-anchor': 'middle' }, f.svg, fmtVal(max));
   dayLabels(f, n, band, days.map((d) => parseDay(d.date)));
 
   hoverLayer(f, (ev, px) => {
     const i = Math.min(n - 1, Math.max(0, Math.floor((px - f.m.l) / band)));
-    wash.setAttribute('x', f.m.l + band * (i + 0.5) - ww / 2);
+    wash.setAttribute('x', cx(i) - ww / 2);
     wash.setAttribute('opacity', 1);
+    if (hoverDot) { hoverDot.setAttribute('cx', cx(i)); hoverDot.setAttribute('cy', f.y(vals[i])); hoverDot.setAttribute('opacity', 1); }
     showTip(ev, days[i].date, tipRows(days[i]));
-  }, () => wash.setAttribute('opacity', 0));
+  }, () => { wash.setAttribute('opacity', 0); if (hoverDot) hoverDot.setAttribute('opacity', 0); });
 }
 
 // ---------------------------------------------------------------- 5h windows
@@ -465,15 +504,12 @@ function renderTable(days) {
     ['缓存读', (d) => fmtTok(d.cache_read)],
     ['缓存写', (d) => fmtTok(d.cache_write)],
     ['命中率', (d) => fmtHit(hitRate(d))],
-    ['5 小时 Δ', (d) => d.q5 ? d.q5 + '%' : '—'],
-    ['7 天 Δ', (d) => d.q7 ? d.q7 + '%' : '—'],
   ];
-  const rows = days.filter((d) => d.requests || d.q5 || d.q7).reverse();
+  const rows = days.filter((d) => d.requests).reverse();
   const total = { date: '合计' };
-  for (const k of ['sessions', 'requests', 'cost', 'input', 'output', 'cache_read', 'cache_write', 'q5', 'q7']) {
+  for (const k of ['sessions', 'requests', 'cost', 'input', 'output', 'cache_read', 'cache_write']) {
     total[k] = Math.round(days.reduce((s, d) => s + d[k], 0) * 10000) / 10000;
   }
-  total.q5 = Math.round(total.q5 * 10) / 10; total.q7 = Math.round(total.q7 * 10) / 10;
   const line = (d) => '<tr>' + cols.map(([, f]) => `<td>${f(d)}</td>`).join('') + '</tr>';
   tbl.innerHTML =
     '<thead><tr>' + cols.map(([h]) => `<th>${h}</th>`).join('') + '</tr></thead>' +
@@ -507,19 +543,29 @@ function render() {
   const tok = days.reduce((s, d) => s + tokTotal(d), 0);
   document.getElementById('a-cost').innerHTML = `合计<b>${fmtUSD(cost)}</b>`;
   document.getElementById('a-tok').innerHTML = `合计<b>${fmtTok(tok)}</b>`;
-  drawColumns(document.getElementById('c-cost'), days, (d) => d.cost, 'var(--s1)', fmtAxisUSD, fmtUSD, (d) => [
+  document.querySelectorAll('.seg[data-chart] button').forEach((b) =>
+    b.setAttribute('aria-pressed', String(modes[b.parentElement.dataset.chart] === b.dataset.mode)));
+  drawDaily(document.getElementById('c-cost'), modes.cost, days, (d) => d.cost, 'var(--s1)', fmtAxisUSD, fmtUSD, (d) => [
     { label: '花费', value: fmtUSD(d.cost), color: 'var(--s1)' },
     { label: '会话', value: String(d.sessions) },
     { label: '请求', value: String(d.requests) },
   ]);
   renderShare(days);
-  drawColumns(document.getElementById('c-tok'), days, tokTotal, 'var(--s1)', fmtTok, fmtTok, (d) =>
+  drawDaily(document.getElementById('c-tok'), modes.tok, days, tokTotal, 'var(--s1)', fmtTok, fmtTok, (d) =>
     [{ label: '合计', value: fmtTok(tokTotal(d)) }, { label: '命中率', value: fmtHit(hitRate(d)) }]
       .concat(TOKENS.map((t) => ({ label: t.label, value: fmtTok(d[t.key]), color: t.color }))));
   const t0 = parseDay(days[0].date).getTime() / 1000;
   drawWindows(document.getElementById('c-quota'), t0, t0 + days.length * 86400);
   renderTable(days);
 }
+
+document.querySelectorAll('.seg[data-chart]').forEach((seg) => seg.addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  modes[seg.dataset.chart] = b.dataset.mode;
+  try { localStorage.setItem('ayaya-usage-modes', JSON.stringify(modes)); } catch (err) {}
+  render();
+}));
 
 document.getElementById('range').addEventListener('click', (e) => {
   const b = e.target.closest('button');
