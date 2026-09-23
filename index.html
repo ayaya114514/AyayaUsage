@@ -53,7 +53,7 @@
   .seg button:focus-visible { outline: 2px solid var(--s1); outline-offset: 1px; }
   .updated { color: var(--muted); font-size: 13px; }
 
-  .stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-bottom: 1px solid var(--line); }
+  .stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-bottom: 1px solid var(--line); }
   .stat { padding: 18px 16px 20px; min-width: 0; }
   .stat + .stat { border-left: 1px solid var(--line); }
   .stat:first-child { padding-left: 0; }
@@ -75,9 +75,10 @@
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
   .legend i { width: 8px; height: 8px; border-radius: 2px; flex: none; }
 
-  .share { display: flex; gap: 2px; height: 8px; margin: 2px 0 10px; }
+  .share-row { display: grid; grid-template-columns: 52px 1fr; align-items: center; gap: 10px; margin-bottom: 8px; color: var(--muted); font-size: 12px; }
+  .share { display: flex; gap: 2px; height: 8px; }
   .share i { display: block; height: 100%; border-radius: 2px; min-width: 2px; }
-  .share-legend { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 13px; color: var(--text-2); margin-bottom: 8px; }
+  .share-legend { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 13px; color: var(--text-2); margin: 10px 0 8px; }
   .share-legend span { display: inline-flex; align-items: center; gap: 6px; }
   .share-legend i { width: 8px; height: 8px; border-radius: 2px; }
   .share-legend em { font-style: normal; color: var(--text); font-variant-numeric: tabular-nums; }
@@ -111,12 +112,10 @@
 
   @media (max-width: 860px) {
     .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    /* first stat spans the row; the other four sit in two columns */
-    .stat { padding: 14px 0 16px; border-top: 1px solid var(--line); }
+    .stat { padding: 14px 16px 16px 0; border-top: 1px solid var(--line); }
     .stat + .stat { border-left: 0; }
-    .stat:first-child { grid-column: 1 / -1; border-top: 0; }
-    .stat:nth-child(even) { padding-right: 16px; }
-    .stat:nth-child(odd):not(:first-child) { border-left: 1px solid var(--line); padding-left: 16px; }
+    .stat:nth-child(-n+2) { border-top: 0; }
+    .stat:nth-child(even) { border-left: 1px solid var(--line); padding: 14px 0 16px 16px; }
     .stat .v { font-size: 24px; }
   }
 </style>
@@ -149,7 +148,8 @@
 
   <section class="block">
     <div class="block-head"><h2>每日 token</h2><div class="aside" id="a-tok"></div></div>
-    <div class="share" id="share"></div>
+    <div class="share-row"><span>按 token</span><div class="share" id="share-tok"></div></div>
+    <div class="share-row"><span>按花费</span><div class="share" id="share-usd"></div></div>
     <div class="share-legend" id="share-legend"></div>
     <div class="chart" id="c-tok"></div>
   </section>
@@ -172,10 +172,10 @@
 <script>
 const NS = 'http://www.w3.org/2000/svg';
 const TOKENS = [
-  { key: 'cache_read', label: '缓存读', color: 'var(--s1)' },
-  { key: 'cache_write', label: '缓存写', color: 'var(--s2)' },
-  { key: 'input', label: '输入', color: 'var(--s3)' },
-  { key: 'output', label: '输出', color: 'var(--s4)' },
+  { key: 'cache_read', usd: 'usd_cache_read', label: '缓存读', color: 'var(--s1)' },
+  { key: 'cache_write', usd: 'usd_cache_write', label: '缓存写', color: 'var(--s2)' },
+  { key: 'input', usd: 'usd_input', label: '输入', color: 'var(--s3)' },
+  { key: 'output', usd: 'usd_output', label: '输出', color: 'var(--s4)' },
 ];
 const FIVE_H = 5 * 3600;
 
@@ -200,6 +200,19 @@ function hhmm(d) { return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
 function ymd(d) { return d.getFullYear() + '-' + mmdd(d); }
 function parseDay(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
 function tokTotal(d) { return TOKENS.reduce((s, t) => s + d[t.key], 0); }
+// Share of prompt tokens served from cache; output tokens never hit the cache.
+function hitRate(d) {
+  const den = d.cache_read + d.cache_write + d.input;
+  return den ? (d.cache_read / den) * 100 : null;
+}
+function fmtHit(p) { return p == null ? '—' : p.toFixed(1) + '%'; }
+function sumDays(days) {
+  const out = {};
+  for (const d of days) for (const k in d) if (k !== 'date') out[k] = (out[k] || 0) + (d[k] || 0);
+  for (const t of TOKENS) { out[t.key] = out[t.key] || 0; out[t.usd] = out[t.usd] || 0; }
+  out.cost = out.cost || 0;
+  return out;
+}
 function whenReset(ts) {
   const r = new Date(ts * 1000);
   const same = r.toDateString() === new Date().toDateString();
@@ -400,30 +413,43 @@ function quotaStat(key, label) {
 }
 function renderStats(days) {
   const box = document.getElementById('stats');
-  const sum = (k) => days.reduce((s, d) => s + d[k], 0);
+  const t = sumDays(days);
+  const missUsd = t.usd_cache_write + t.usd_input;
   box.replaceChildren(
-    stat('花费', fmtUSD(sum('cost')), 'API 等价，非实际账单'),
-    stat('Token', fmtTok(days.reduce((s, d) => s + tokTotal(d), 0)), '输出 ' + fmtTok(sum('output'))),
-    stat('会话', String(sum('sessions')), sum('requests') + ' 次请求'),
+    stat('花费', fmtUSD(t.cost), 'API 等价，非实际账单'),
+    stat('Token', fmtTok(tokTotal(t)), '输出 ' + fmtTok(t.output)),
+    stat('缓存命中率', fmtHit(hitRate(t)),
+      t.cost ? '未命中占花费 ' + fmtPct((missUsd / t.cost) * 100) : '未命中 ' + fmtTok(t.cache_write + t.input)),
+    stat('会话', String(t.sessions || 0), (t.requests || 0) + ' 次请求'),
     quotaStat('five_hour', '5 小时额度'),
     quotaStat('seven_day', '7 天额度'),
   );
 }
-function renderShare(days) {
-  const totals = TOKENS.map((t) => days.reduce((s, d) => s + d[t.key], 0));
-  const all = totals.reduce((a, b) => a + b, 0);
-  const share = document.getElementById('share');
-  const legend = document.getElementById('share-legend');
-  share.textContent = ''; legend.textContent = '';
-  share.hidden = !all;
+function fillShare(id, values) {
+  const bar = document.getElementById(id);
+  const all = values.reduce((a, b) => a + b, 0);
+  bar.textContent = '';
   TOKENS.forEach((t, i) => {
-    if (all && totals[i]) {
-      const seg = document.createElement('i');
-      seg.style.background = t.color; seg.style.flex = String(totals[i] / all);
-      share.appendChild(seg);
-    }
+    if (!all || !values[i]) return;
+    const seg = document.createElement('i');
+    seg.style.background = t.color; seg.style.flex = String(values[i] / all);
+    bar.appendChild(seg);
+  });
+  return all;
+}
+function renderShare(days) {
+  const sum = sumDays(days);
+  const tok = TOKENS.map((t) => sum[t.key]);
+  const usd = TOKENS.map((t) => sum[t.usd]);
+  const allTok = fillShare('share-tok', tok);
+  const allUsd = fillShare('share-usd', usd);
+  const legend = document.getElementById('share-legend');
+  legend.textContent = '';
+  TOKENS.forEach((t, i) => {
+    const pct = (v, all) => (all ? fmtPct((v / all) * 100) : '—');
     const s = document.createElement('span');
-    s.innerHTML = `<i style="background:${t.color}"></i>${t.label} <em>${fmtTok(totals[i])}</em> <small>${all ? fmtPct((totals[i] / all) * 100) : ''}</small>`;
+    s.innerHTML = `<i style="background:${t.color}"></i>${t.label} <em>${fmtTok(tok[i])}</em> <small>${pct(tok[i], allTok)}</small>` +
+      ` · <em>${fmtUSD(usd[i])}</em> <small>${pct(usd[i], allUsd)}</small>`;
     legend.appendChild(s);
   });
 }
@@ -438,6 +464,7 @@ function renderTable(days) {
     ['输出', (d) => fmtTok(d.output)],
     ['缓存读', (d) => fmtTok(d.cache_read)],
     ['缓存写', (d) => fmtTok(d.cache_write)],
+    ['命中率', (d) => fmtHit(hitRate(d))],
     ['5 小时 Δ', (d) => d.q5 ? d.q5 + '%' : '—'],
     ['7 天 Δ', (d) => d.q7 ? d.q7 + '%' : '—'],
   ];
@@ -487,7 +514,8 @@ function render() {
   ]);
   renderShare(days);
   drawColumns(document.getElementById('c-tok'), days, tokTotal, 'var(--s1)', fmtTok, fmtTok, (d) =>
-    [{ label: '合计', value: fmtTok(tokTotal(d)) }].concat(TOKENS.map((t) => ({ label: t.label, value: fmtTok(d[t.key]), color: t.color }))));
+    [{ label: '合计', value: fmtTok(tokTotal(d)) }, { label: '命中率', value: fmtHit(hitRate(d)) }]
+      .concat(TOKENS.map((t) => ({ label: t.label, value: fmtTok(d[t.key]), color: t.color }))));
   const t0 = parseDay(days[0].date).getTime() / 1000;
   drawWindows(document.getElementById('c-quota'), t0, t0 + days.length * 86400);
   renderTable(days);
