@@ -43,12 +43,7 @@
   .wrap { max-width: 980px; margin: 0 auto; padding: 40px 20px 64px; }
   .serif { font-family: var(--serif); }
 
-  .head { display: flex; align-items: center; gap: 12px; }
-  .head img { width: 34px; height: 34px; }
-  h1 { margin: 0; font: 500 26px/1.2 var(--serif); letter-spacing: -0.01em; }
-  .sub { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
-
-  .bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 28px 0 22px; flex-wrap: wrap; }
+  .bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 24px; flex-wrap: wrap; }
   .seg { display: inline-flex; gap: 20px; }
   .seg button {
     font: inherit; font-size: 15px; color: var(--muted); background: none; border: 0;
@@ -57,14 +52,10 @@
   .seg button:hover { color: var(--text); }
   .seg button[aria-pressed="true"] { color: var(--text); border-bottom-color: var(--accent); }
   .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
-  .seg.sm { gap: 14px; }
-  .seg.sm button { font-size: 13px; padding: 0 0 2px; border-bottom-width: 1.5px; }
-  .tools { display: flex; align-items: center; gap: 18px; }
   .updated { color: var(--muted); font-size: 13px; }
 
   .lead { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 320px); gap: 24px 48px; align-items: end; }
   .cost .v { font: 400 64px/1 var(--serif); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-  .cost .d { color: var(--muted); font-size: 14px; margin-top: 10px; }
   .quota { display: grid; gap: 14px; }
   .q { display: grid; grid-template-columns: auto 1fr; align-items: baseline; gap: 2px 12px; }
   .q .k { color: var(--text-2); font-size: 14px; }
@@ -79,23 +70,15 @@
   .fig { min-width: 0; }
   .fig .k { color: var(--muted); font-size: 13px; }
   .fig .v { font: 400 28px/1.25 var(--serif); margin-top: 2px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .fig .d { color: var(--text-2); font-size: 13px; margin-top: 2px; }
 
   section.block { margin-top: 52px; }
-  .block-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; margin-bottom: 14px; }
-  h2 { margin: 0; font: 500 21px/1.3 var(--serif); }
-  h2 span { font: 13px var(--sans); color: var(--muted); margin-left: 10px; }
-  .aside { color: var(--muted); font-size: 13px; }
-  .aside b { font: 400 17px var(--serif); color: var(--text); margin-left: 6px; font-variant-numeric: tabular-nums; }
+  h2 { margin: 0 0 14px; font: 500 21px/1.3 var(--serif); }
 
-  .share-row { display: grid; grid-template-columns: 56px 1fr; align-items: center; gap: 10px; margin-bottom: 8px; color: var(--muted); font-size: 12px; }
-  .share { display: flex; gap: 2px; height: 10px; }
+  .share { display: flex; gap: 2px; height: 10px; margin-bottom: 8px; cursor: default; touch-action: manipulation; }
   .share i { display: block; height: 100%; border-radius: 3px; min-width: 2px; }
-  .share-legend { display: flex; flex-wrap: wrap; gap: 6px 24px; font-size: 13px; color: var(--text-2); margin: 12px 0 14px; }
+  .share-legend { display: flex; flex-wrap: wrap; gap: 6px 24px; font-size: 13px; color: var(--text-2); margin: 4px 0 14px; }
   .share-legend span { display: inline-flex; align-items: center; gap: 6px; }
   .share-legend i { width: 9px; height: 9px; border-radius: 50%; }
-  .share-legend em { font-style: normal; color: var(--text); font-variant-numeric: tabular-nums; }
-  .share-legend small { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 
   .chart svg { display: block; width: 100%; touch-action: pan-y; }
   .chart text { fill: var(--muted); font-size: 12px; font-family: var(--sans); font-variant-numeric: tabular-nums; }
@@ -124,7 +107,7 @@
   .tip i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 
   @media (max-width: 720px) {
-    .wrap { padding: 28px 16px 48px; }
+    .wrap { padding: 24px 16px 48px; }
     .lead { grid-template-columns: minmax(0, 1fr); }
     .cost .v { font-size: 52px; }
     .figs { gap: 12px 16px; padding: 16px 16px; margin-top: 28px; }
@@ -135,14 +118,6 @@
 </head>
 <body>
 <main class="wrap">
-  <header class="head">
-    <img src="favicon.svg" alt="">
-    <div>
-      <h1>AyayaUsage</h1>
-      <p class="sub">Claude Code 每日花费、token 与额度用量</p>
-    </div>
-  </header>
-
   <div class="bar">
     <div class="seg" id="range">
       <button type="button" data-range="7">7 天</button>
@@ -155,31 +130,18 @@
   <section id="stats"></section>
 
   <section class="block">
-    <div class="block-head"><h2>明细</h2></div>
     <div class="table-wrap"><table id="tbl"></table></div>
   </section>
 
   <section class="block">
-    <div class="block-head">
-      <h2>每日花费<span>API 等价 · USD</span></h2>
-      <div class="tools">
-        <div class="seg sm" data-chart="cost"><button type="button" data-mode="bar">柱状</button><button type="button" data-mode="line">折线</button></div>
-        <div class="aside" id="a-cost"></div>
-      </div>
-    </div>
+    <h2>花费</h2>
     <div class="chart" id="c-cost"></div>
   </section>
 
   <section class="block">
-    <div class="block-head">
-      <h2>每日 token</h2>
-      <div class="tools">
-        <div class="seg sm" data-chart="tok"><button type="button" data-mode="bar">柱状</button><button type="button" data-mode="line">折线</button></div>
-        <div class="aside" id="a-tok"></div>
-      </div>
-    </div>
-    <div class="share-row"><span>按 token</span><div class="share" id="share-tok"></div></div>
-    <div class="share-row"><span>按花费</span><div class="share" id="share-usd"></div></div>
+    <h2>Token</h2>
+    <div class="share" id="share-tok"></div>
+    <div class="share" id="share-usd"></div>
     <div class="share-legend" id="share-legend"></div>
     <div class="chart" id="c-tok"></div>
   </section>
@@ -198,11 +160,6 @@ const TOKENS = [
 let DATA = null;
 let range = '7';
 try { range = localStorage.getItem('ayaya-usage-range') || range; } catch (e) {}
-const modes = { cost: 'bar', tok: 'bar' };
-try {
-  const saved = JSON.parse(localStorage.getItem('ayaya-usage-modes') || '{}');
-  for (const k in modes) if (saved[k] === 'bar' || saved[k] === 'line') modes[k] = saved[k];
-} catch (e) {}
 
 // ---------------------------------------------------------------- format
 
@@ -237,7 +194,7 @@ function sumDays(days) {
 function whenReset(ts) {
   const r = new Date(ts * 1000);
   const same = r.toDateString() === new Date().toDateString();
-  return (same ? '' : mmdd(r) + ' ') + hhmm(r) + ' 重置';
+  return (same ? '' : mmdd(r) + ' ') + hhmm(r);
 }
 
 // ---------------------------------------------------------------- svg
@@ -311,7 +268,7 @@ function showTip(ev, title, rows) {
   tip.style.left = x + 'px'; tip.style.top = y + 'px';
 }
 function hideTip() { tip.hidden = true; }
-document.addEventListener('pointerdown', (e) => { if (!e.target.closest('.chart')) hideTip(); });
+document.addEventListener('pointerdown', (e) => { if (!e.target.closest('.chart, .share')) hideTip(); });
 
 // ---------------------------------------------------------------- daily columns
 
@@ -323,7 +280,7 @@ function dayLabels(f, n, band, dates) {
   });
 }
 
-function drawDaily(box, mode, days, value, color, fmtAxis, fmtVal, tipRows) {
+function drawDaily(box, days, value, color, fmtAxis, fmtVal, tipRows) {
   const vals = days.map(value);
   const max = Math.max(...vals);
   if (!(max > 0)) { box.innerHTML = '<div class="empty">这段时间没有使用记录</div>'; return; }
@@ -336,42 +293,22 @@ function drawDaily(box, mode, days, value, color, fmtAxis, fmtVal, tipRows) {
   const wash = el('rect', { y: f.m.t - 8, height: f.ph + 8, width: ww, rx: 4, fill: 'var(--hover)', opacity: 0 }, f.svg);
   f.svg.insertBefore(wash, f.svg.querySelector('line'));
   const peak = vals.indexOf(max);
-  let hoverDot = null;
-
-  if (mode === 'line') {
-    const pts = vals.map((v, i) => [cx(i).toFixed(1), f.y(v).toFixed(1)]);
-    const d = pts.map((q, i) => (i ? 'L' : 'M') + q[0] + ',' + q[1]).join('');
-    const area = el('path', { d: `${d}L${pts[n - 1][0]},${f.y(0)}L${pts[0][0]},${f.y(0)}Z`, opacity: 0.1 }, f.svg);
-    area.style.fill = color;
-    const line = el('path', { d, fill: 'none', 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, f.svg);
-    line.style.stroke = color;
-    // Markers only while there is room for them; the peak always gets one.
-    pts.forEach((q, i) => {
-      if (band < 14 && i !== peak) return;
-      const c = el('circle', { cx: q[0], cy: q[1], r: 4, 'stroke-width': 2, stroke: 'var(--bg)' }, f.svg);
-      c.style.fill = color;
-    });
-    hoverDot = el('circle', { r: 5, 'stroke-width': 2, stroke: 'var(--bg)', opacity: 0 }, f.svg);
-    hoverDot.style.fill = color;
-  } else {
-    vals.forEach((v, i) => {
-      if (!(v > 0)) return;
-      const h = Math.max(1, f.y(0) - f.y(v));
-      const p = el('path', { d: colPath(cx(i) - bw / 2, f.y(0) - h, bw, h, 4) }, f.svg);
-      p.style.fill = color;
-    });
-  }
+  vals.forEach((v, i) => {
+    if (!(v > 0)) return;
+    const h = Math.max(1, f.y(0) - f.y(v));
+    const p = el('path', { d: colPath(cx(i) - bw / 2, f.y(0) - h, bw, h, 4) }, f.svg);
+    p.style.fill = color;
+  });
   // Label only the peak day; the tooltip and the table carry the rest.
-  el('text', { class: 'val', x: cx(peak), y: f.y(max) - (mode === 'line' ? 10 : 6), 'text-anchor': 'middle' }, f.svg, fmtVal(max));
+  el('text', { class: 'val', x: cx(peak), y: f.y(max) - 6, 'text-anchor': 'middle' }, f.svg, fmtVal(max));
   dayLabels(f, n, band, days.map((d) => parseDay(d.date)));
 
   hoverLayer(f, (ev, px) => {
     const i = Math.min(n - 1, Math.max(0, Math.floor((px - f.m.l) / band)));
     wash.setAttribute('x', cx(i) - ww / 2);
     wash.setAttribute('opacity', 1);
-    if (hoverDot) { hoverDot.setAttribute('cx', cx(i)); hoverDot.setAttribute('cy', f.y(vals[i])); hoverDot.setAttribute('opacity', 1); }
     showTip(ev, days[i].date, tipRows(days[i]));
-  }, () => { wash.setAttribute('opacity', 0); if (hoverDot) hoverDot.setAttribute('opacity', 0); });
+  }, () => wash.setAttribute('opacity', 0));
 }
 
 // ---------------------------------------------------------------- stats, share, table
@@ -382,16 +319,16 @@ function node(tag, cls, text) {
   if (text != null) n.textContent = text;
   return n;
 }
-function fig(k, v, d) {
+function fig(k, v) {
   const t = node('div', 'fig');
-  t.append(node('div', 'k', k), node('div', 'v', v), node('div', 'd', d));
+  t.append(node('div', 'k', k), node('div', 'v', v));
   return t;
 }
 function quotaRow(key, label) {
   const pts = DATA.quota[key] || [];
   const last = pts[pts.length - 1];
-  let v = '—', d = '暂无记录', pct = 0;
-  if (last && last[2] <= Date.now() / 1000) { v = '0%'; d = '已重置'; }
+  let v = '—', d = '', pct = 0;
+  if (last && last[2] <= Date.now() / 1000) v = '0%';
   else if (last) { v = last[1] + '%'; d = whenReset(last[2]); pct = last[1]; }
   const t = node('div', 'q');
   const val = node('div', 'v');
@@ -406,23 +343,21 @@ function quotaRow(key, label) {
 function renderStats(days) {
   const box = document.getElementById('stats');
   const t = sumDays(days);
-  const missUsd = t.usd_cache_write + t.usd_input;
   const cost = node('div', 'cost');
-  cost.append(node('div', 'v', fmtUSD(t.cost)), node('div', 'd', '花费 · API 等价，非实际账单'));
+  cost.append(node('div', 'v', fmtUSD(t.cost)));
   const quota = node('div', 'quota');
-  quota.append(quotaRow('five_hour', '5 小时额度'), quotaRow('seven_day', '7 天额度'));
+  quota.append(quotaRow('five_hour', '5h'), quotaRow('seven_day', '7d'));
   const lead = node('div', 'lead');
   lead.append(cost, quota);
   const figs = node('div', 'figs');
   figs.append(
-    fig('Token', fmtTok(tokTotal(t)), '输出 ' + fmtTok(t.output)),
-    fig('缓存命中率', fmtHit(hitRate(t)),
-      t.cost ? '未命中占花费 ' + fmtPct((missUsd / t.cost) * 100) : '未命中 ' + fmtTok(t.cache_write + t.input)),
-    fig('会话', String(t.sessions || 0), (t.requests || 0) + ' 次请求'),
+    fig('Token', fmtTok(tokTotal(t))),
+    fig('命中率', fmtHit(hitRate(t))),
+    fig('会话', String(t.sessions || 0)),
   );
   box.replaceChildren(lead, figs);
 }
-function fillShare(id, values) {
+function fillShare(id, title, values, fmt) {
   const bar = document.getElementById(id);
   const all = values.reduce((a, b) => a + b, 0);
   bar.textContent = '';
@@ -432,36 +367,33 @@ function fillShare(id, values) {
     seg.style.background = t.color; seg.style.flex = String(values[i] / all);
     bar.appendChild(seg);
   });
-  return all;
+  const rows = TOKENS.map((t, i) => ({
+    label: t.label, color: t.color,
+    value: fmt(values[i]) + ' · ' + (all ? fmtPct((values[i] / all) * 100) : '—'),
+  }));
+  bar.onpointermove = bar.onpointerdown = (ev) => showTip(ev, title, rows);
+  bar.onpointerleave = hideTip;
 }
 function renderShare(days) {
   const sum = sumDays(days);
-  const tok = TOKENS.map((t) => sum[t.key]);
-  const usd = TOKENS.map((t) => sum[t.usd]);
-  const allTok = fillShare('share-tok', tok);
-  const allUsd = fillShare('share-usd', usd);
+  fillShare('share-tok', '按 token', TOKENS.map((t) => sum[t.key]), fmtTok);
+  fillShare('share-usd', '按花费', TOKENS.map((t) => sum[t.usd]), fmtUSD);
   const legend = document.getElementById('share-legend');
   legend.textContent = '';
-  TOKENS.forEach((t, i) => {
-    const pct = (v, all) => (all ? fmtPct((v / all) * 100) : '—');
+  for (const t of TOKENS) {
     const s = document.createElement('span');
-    s.innerHTML = `<i style="background:${t.color}"></i>${t.label} <em>${fmtTok(tok[i])}</em> <small>${pct(tok[i], allTok)}</small>` +
-      ` · <em>${fmtUSD(usd[i])}</em> <small>${pct(usd[i], allUsd)}</small>`;
+    s.innerHTML = `<i style="background:${t.color}"></i>${t.label}`;
     legend.appendChild(s);
-  });
+  }
 }
 function renderTable(days) {
   const tbl = document.getElementById('tbl');
   const cols = [
     ['日期', (d) => d.date],
-    ['会话', (d) => d.sessions],
-    ['请求', (d) => d.requests],
     ['花费', (d) => fmtUSD(d.cost)],
-    ['输入', (d) => fmtTok(d.input)],
-    ['输出', (d) => fmtTok(d.output)],
-    ['缓存读', (d) => fmtTok(d.cache_read)],
-    ['缓存写', (d) => fmtTok(d.cache_write)],
+    ['Token', (d) => fmtTok(tokTotal(d))],
     ['命中率', (d) => fmtHit(hitRate(d))],
+    ['会话', (d) => d.sessions],
   ];
   const rows = days.filter((d) => d.requests).reverse();
   const total = { date: '合计' };
@@ -497,31 +429,17 @@ function render() {
   document.querySelectorAll('#range button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.range === range)));
   const days = rangeDays();
   renderStats(days);
-  const cost = days.reduce((s, d) => s + d.cost, 0);
-  const tok = days.reduce((s, d) => s + tokTotal(d), 0);
-  document.getElementById('a-cost').innerHTML = `合计<b>${fmtUSD(cost)}</b>`;
-  document.getElementById('a-tok').innerHTML = `合计<b>${fmtTok(tok)}</b>`;
-  document.querySelectorAll('.seg[data-chart] button').forEach((b) =>
-    b.setAttribute('aria-pressed', String(modes[b.parentElement.dataset.chart] === b.dataset.mode)));
-  drawDaily(document.getElementById('c-cost'), modes.cost, days, (d) => d.cost, 'var(--s1)', fmtAxisUSD, fmtUSD, (d) => [
+  drawDaily(document.getElementById('c-cost'), days, (d) => d.cost, 'var(--s1)', fmtAxisUSD, fmtUSD, (d) => [
     { label: '花费', value: fmtUSD(d.cost), color: 'var(--s1)' },
     { label: '会话', value: String(d.sessions) },
     { label: '请求', value: String(d.requests) },
   ]);
   renderShare(days);
-  drawDaily(document.getElementById('c-tok'), modes.tok, days, tokTotal, 'var(--s1)', fmtTok, fmtTok, (d) =>
+  drawDaily(document.getElementById('c-tok'), days, tokTotal, 'var(--s1)', fmtTok, fmtTok, (d) =>
     [{ label: '合计', value: fmtTok(tokTotal(d)) }, { label: '命中率', value: fmtHit(hitRate(d)) }]
       .concat(TOKENS.map((t) => ({ label: t.label, value: fmtTok(d[t.key]), color: t.color }))));
   renderTable(days);
 }
-
-document.querySelectorAll('.seg[data-chart]').forEach((seg) => seg.addEventListener('click', (e) => {
-  const b = e.target.closest('button');
-  if (!b) return;
-  modes[seg.dataset.chart] = b.dataset.mode;
-  try { localStorage.setItem('ayaya-usage-modes', JSON.stringify(modes)); } catch (err) {}
-  render();
-}));
 
 document.getElementById('range').addEventListener('click', (e) => {
   const b = e.target.closest('button');
@@ -543,7 +461,7 @@ fetch('data.json', { cache: 'no-cache' })
     DATA = data;
     if (!['7', '30', 'all'].includes(range)) range = '7';
     const g = new Date(data.generated_at);
-    document.getElementById('updated').textContent = '更新于 ' + mmdd(g) + ' ' + hhmm(g);
+    document.getElementById('updated').textContent = mmdd(g) + ' ' + hhmm(g);
     lastW = document.querySelector('.wrap').clientWidth;
     render();
   })
