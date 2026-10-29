@@ -5,29 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AyayaUsage</title>
 <meta name="description" content="Claude Code 每日花费、token 与额度用量">
-<meta name="color-scheme" content="light">
-<meta name="theme-color" content="#faf9f5">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#1f1e1d">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <style>
   :root {
-    color-scheme: light;
-    --bg: #faf9f5;
-    --raise: #f2f0e8;
-    --hover: #efede5;
-    --card: #fffefb;
-    --line: #e6e3d9;
-    --grid: #edebe3;
-    --axis: #cfccc0;
-    --text: #1f1e1d;
-    --text-2: #4d4c48;
-    --muted: #73726c;
-    --accent: #c96442;
+    color-scheme: dark;
+    --bg: #1f1e1d;
+    --raise: #2a2927;
+    --hover: #2e2d2a;
+    --card: #302f2c;
+    --line: #3e3d39;
+    --grid: #33322f;
+    --axis: #57554f;
+    --text: #f0eee6;
+    --text-2: #c4c1b7;
+    --muted: #9b988f;
+    --accent: #d97757;
     --s1: #d97757;
-    --s2: #5b8ec4;
-    --s3: #788c5d;
-    --s4: #c09a3e;
-    --warning: #c08a1e;
-    --critical: #b5432f;
+    --s2: #6fa3d8;
+    --s3: #93ab75;
+    --s4: #d2ad55;
+    --warning: #dca237;
+    --critical: #d6604b;
     --serif: ui-serif, Charter, "Iowan Old Style", "Source Serif 4", Georgia, "Songti SC", "Noto Serif CJK SC", "Noto Serif SC", serif;
     --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   }
@@ -99,7 +99,7 @@
   .tip {
     position: fixed; z-index: 10; pointer-events: none; min-width: 168px;
     background: var(--card); border: 1px solid var(--line); border-radius: 10px;
-    padding: 10px 12px; font-size: 13px; box-shadow: 0 6px 24px rgba(60, 50, 30, .12);
+    padding: 10px 12px; font-size: 13px; box-shadow: 0 6px 24px rgba(0, 0, 0, .45);
   }
   .tip b { display: block; font: 500 14px var(--serif); margin-bottom: 4px; }
   .tip div { display: flex; align-items: center; gap: 8px; color: var(--text-2); }
